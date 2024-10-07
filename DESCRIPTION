@@ -1,0 +1,15 @@
+Package: Budgeon
+Title: Constructing longitudinal disease progression curves using sparse, short-term individual data with an application to Alzheimer’s disease
+Version: 0.0.0.9000
+Authors@R: 
+    c(person("Wisch", "Julie", , "julie.wisch@wustl.edu", role = "cre",
+           ),
+    person("Jiao", "Aurora", , "a.jiao@wustl.edu", role = "aut",
+           ))
+Maintainer: Julie Wisch <julie.wisch@wustl.edu>
+Description: Replication of longitudinal disease progression curves from Budgeon et al, 2017
+License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
+    license
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
