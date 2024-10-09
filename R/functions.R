@@ -43,6 +43,11 @@ generate_synth_data <- function (n, T, l){
 
 get_individ_lm <- function(df, value_name, time_name, id_name){
   
+  df <- df[!is.na(df[[value_name]]),]
+  duplicated_IDs <- unique(df[duplicated(df[[id_name]]), id_name])
+  
+  df <- df[df[[id_name]] %in% duplciated_IDs,]
+  
   subject_col <- sym(id_name)
   
   
