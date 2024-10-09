@@ -57,8 +57,17 @@ bootstrap_get_Time_to_Positivity <- function(df, PET_pos_threshold, id_name, tim
   
   # Convert results to a matrix or dataframe for easier processing
   bootstrap_matrix <- do.call(rbind, df_res)
-  mean_result <- data.frame(setDT(bootstrap_matrix)[, median(interpolated_val, na.rm = TRUE), by = Time_Window])
-  sd_result <- data.frame(setDT(bootstrap_matrix)[, sd(interpolated_val, na.rm = TRUE), by = Time_Window])
+  
+  mean_result <- data.frame(bootstrap_matrix) %>%
+    group_by(Time_Window) %>%
+    summarize(interpolated_val_mean = median(interpolated_val, na.rm = TRUE))
+  
+  sd_result <- data.frame(bootstrap_matrix) %>%
+    group_by(Time_Window) %>%
+    summarize(interpolated_val_sd = sd(interpolated_val, na.rm = TRUE))
+  
+  # mean_result <- data.frame(setDT(bootstrap_matrix)[, median(interpolated_val, na.rm = TRUE), by = Time_Window])
+  # sd_result <- data.frame(setDT(bootstrap_matrix)[, sd(interpolated_val, na.rm = TRUE), by = Time_Window])
 
   ci_calc <- merge(mean_result, sd_result, by = "Time_Window", suffix = c("_mean", "_sd"))
 
