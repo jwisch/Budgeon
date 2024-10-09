@@ -57,7 +57,6 @@ bootstrap_get_Time_to_Positivity <- function(df, PET_pos_threshold, id_name, tim
   
   # Convert results to a matrix or dataframe for easier processing
   bootstrap_matrix <- do.call(rbind, df_res)
-  
   mean_result <- data.frame(bootstrap_matrix) %>%
     group_by(Time_Window) %>%
     summarize(interpolated_val_mean = median(interpolated_val, na.rm = TRUE))
@@ -66,19 +65,17 @@ bootstrap_get_Time_to_Positivity <- function(df, PET_pos_threshold, id_name, tim
     group_by(Time_Window) %>%
     summarize(interpolated_val_sd = sd(interpolated_val, na.rm = TRUE))
   
-  # mean_result <- data.frame(setDT(bootstrap_matrix)[, median(interpolated_val, na.rm = TRUE), by = Time_Window])
-  # sd_result <- data.frame(setDT(bootstrap_matrix)[, sd(interpolated_val, na.rm = TRUE), by = Time_Window])
-
-  ci_calc <- merge(mean_result, sd_result, by = "Time_Window", suffix = c("_mean", "_sd"))
-
-  # # Combine into a dataframe of confidence intervals
+  
+  ci_calc <- merge(mean_result, sd_result, by = "Time_Window")
+  
+  # Combine into a dataframe of confidence intervals
   ci_df <- data.frame(
     Time_Window = ci_calc$Time_Window,
-    Estimate =ci_calc$V1_mean,
-    CI_Lower = ci_calc$V1_mean - 1.96 * ci_calc$V1_sd,
-    CI_Upper = ci_calc$V1_mean + 1.96 * ci_calc$V1_sd
+    Estimate =ci_calc$interpolated_val_mean,
+    CI_Lower = ci_calc$interpolated_val_mean - 1.96 * ci_calc$interpolated_val_sd,
+    CI_Upper = ci_calc$interpolated_val_mean + 1.96 * ci_calc$interpolated_val_sd
   )
-
+  
   min_row <- ci_df[ci_df$Estimate < PET_pos_threshold ,] %>%
     filter(Estimate == max(Estimate, na.rm = TRUE))
 
