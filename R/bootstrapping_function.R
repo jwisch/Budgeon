@@ -90,5 +90,4 @@ bootstrap_get_Time_to_Positivity <- function(df, PET_pos_threshold, id_name, tim
 
   return(ci_df[, c("Time_to_Positivity", "Estimate", "CI_Lower", "CI_Upper")])
   
-  return(ci_calc)
 }
