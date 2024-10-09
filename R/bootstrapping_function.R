@@ -69,15 +69,17 @@ bootstrap_get_Time_to_Positivity <- function(df, PET_pos_threshold, id_name, tim
     CI_Lower = ci_calc$V1_mean - 1.96 * ci_calc$V1_sd,
     CI_Upper = ci_calc$V1_mean + 1.96 * ci_calc$V1_sd
   )
+  # 
+  # min_row <- ci_df[ci_df$Estimate < PET_pos_threshold ,] %>%
+  #   filter(Estimate == max(Estimate, na.rm = TRUE))
+  # 
+  # max_row <- ci_df[ci_df$Estimate > PET_pos_threshold ,] %>%
+  #   filter(Estimate == min(Estimate, na.rm = TRUE))
+  # 
+  # adjustment <- approx(ci_df$Estimate, ci_df$Time_Window, PET_pos_threshold)$y
+  # ci_df$Time_to_Positivity <- ci_df$Time_Window - as.numeric(adjustment)
+  # 
+  # return(ci_df[, c("Time_to_Positivity", "Estimate", "CI_Lower", "CI_Upper")])
   
-  min_row <- ci_df[ci_df$Estimate < PET_pos_threshold ,] %>%
-    filter(Estimate == max(Estimate, na.rm = TRUE))
-  
-  max_row <- ci_df[ci_df$Estimate > PET_pos_threshold ,] %>%
-    filter(Estimate == min(Estimate, na.rm = TRUE))
-  
-  adjustment <- approx(ci_df$Estimate, ci_df$Time_Window, PET_pos_threshold)$y
-  ci_df$Time_to_Positivity <- ci_df$Time_Window - as.numeric(adjustment)
-  
-  return(ci_df[, c("Time_to_Positivity", "Estimate", "CI_Lower", "CI_Upper")])
+  return(ci_df)
 }
