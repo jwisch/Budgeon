@@ -199,7 +199,7 @@ get_integration_estimates <- function(eval_at_midpoint, id_name, degree = 3){
 #' @export
 get_Time_to_Positivity <- function(df, id_name, time_name, value_name, PET_pos_threshold, degree = 3){
   
-  individual_coeffs <- get_individ_lmer(df, value_name, time_name, id_name)
+  individual_coeffs <- get_individ_lm(df, value_name, time_name, id_name)
   
   individual_coeffs <- individual_coeffs[individual_coeffs$Slope >= 0,]
   
