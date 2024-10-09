@@ -57,11 +57,11 @@ bootstrap_get_Time_to_Positivity <- function(df, PET_pos_threshold, id_name, tim
   
   # Convert results to a matrix or dataframe for easier processing
   bootstrap_matrix <- do.call(rbind, df_res)
-  # mean_result <- data.frame(setDT(bootstrap_matrix)[, median(interpolated_val, na.rm = TRUE), by = Time_Window])
-  # sd_result <- data.frame(setDT(bootstrap_matrix)[, sd(interpolated_val, na.rm = TRUE), by = Time_Window])
-  # 
-  # ci_calc <- merge(mean_result, sd_result, by = "Time_Window", suffix = c("_mean", "_sd"))
-  # 
+  mean_result <- data.frame(setDT(bootstrap_matrix)[, median(interpolated_val, na.rm = TRUE), by = Time_Window])
+  sd_result <- data.frame(setDT(bootstrap_matrix)[, sd(interpolated_val, na.rm = TRUE), by = Time_Window])
+
+  ci_calc <- merge(mean_result, sd_result, by = "Time_Window", suffix = c("_mean", "_sd"))
+
   # # Combine into a dataframe of confidence intervals
   # ci_df <- data.frame(
   #   Time_Window = ci_calc$Time_Window,
@@ -81,5 +81,5 @@ bootstrap_get_Time_to_Positivity <- function(df, PET_pos_threshold, id_name, tim
   # 
   # return(ci_df[, c("Time_to_Positivity", "Estimate", "CI_Lower", "CI_Upper")])
   
-  return(bootstrap_matrix)
+  return(ci_calc)
 }
