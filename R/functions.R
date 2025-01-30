@@ -45,8 +45,16 @@ get_individ_lm <- function(df, value_name, time_name, id_name){
   
   df <- df[!is.na(df[[value_name]]),]
   duplicated_IDs <- unique(df[duplicated(df[[id_name]]), id_name])
-  
-  df <- df[df[[id_name]] %in% duplicated_IDs,]
+ 
+   
+  df <- function(df){
+    tryCatch({
+      df[df[[id_name]] %in% duplicated_IDs,]
+    },
+    error = function(cond){
+    df[df[[id_name]] %in% duplicated_IDs[[id_name]], ] #alternate depending on package loading situation
+    })
+  }
   
   subject_col <- sym(id_name)
   
