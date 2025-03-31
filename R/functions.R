@@ -58,12 +58,17 @@ get_individ_lm <- function(df, value_name, time_name, id_name){
   
   subject_col <- sym(id_name)
   
+  #Added fix in the event of duplicated Time_from_baselines
+  df_filtered <- df %>%
+    group_by(!!subject_col) %>%
+    filter(n() > 1, n_distinct(!!sym(time_name)) > 1) %>%
+    ungroup()
   
   # Create the formula dynamically
   formula <- as.formula(paste(value_name, "~", time_name))
   
   # Run linear regression for each ID separately
-  individual_coeffs <- df %>%
+  individual_coeffs <- df_filtered %>%
     group_by(!!subject_col) %>%
     group_modify(~ {
       model <- lm(formula, data = .x)
