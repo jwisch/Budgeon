@@ -70,21 +70,23 @@ bootstrap_get_Time_to_Positivity <- function(df, PET_pos_threshold, id_name, tim
   
   # Combine into a dataframe of confidence intervals
   ci_df <- data.frame(
-    Time_Window = ci_calc$Time_Window,
+    Time_to_Positivity = ci_calc$Time_Window,
     Estimate =ci_calc$interpolated_val_mean,
     CI_Lower = ci_calc$interpolated_val_mean - 1.96 * ci_calc$interpolated_val_sd,
     CI_Upper = ci_calc$interpolated_val_mean + 1.96 * ci_calc$interpolated_val_sd
   )
   
   # Only compute adjustment if there's a crossing over the threshold
-  if (any(ci_df$Estimate < PET_pos_threshold) & any(ci_df$Estimate > PET_pos_threshold)) {
-    adjustment <- approx(ci_df$Estimate, ci_df$Time_Window, xout = PET_pos_threshold)$y
-    ci_df$Time_to_Positivity <- ci_df$Time_Window - as.numeric(adjustment)
-  } else {
-    
-    ci_df$Time_to_Positivity <- ci_df$Time_Window  # or 0, if you prefer that convention
-    warning("Estimated trajectory never crosses the PET positivity threshold.")
-  }
+  tryCatch({
+    if (any(ci_df$Estimate < PET_pos_threshold) & any(ci_df$Estimate > PET_pos_threshold)) {
+      adjustment <- approx(ci_df$Estimate, ci_df$Time_Window, xout = PET_pos_threshold)$y
+      ci_df$Time_to_Positivity <- ci_df$Time_Window - as.numeric(adjustment)
+    } else {
+      
+    }
+  }, error = function(e) {
+    warning("Failed to calculate Time_to_Positivity: ", conditionMessage(e))
+  })
   return(ci_df[, c("Time_to_Positivity", "Estimate", "CI_Lower", "CI_Upper")])
   
 }
