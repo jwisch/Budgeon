@@ -158,15 +158,16 @@ poly_ft <- function(eval_at_midpoint, id_name, degree = 3){
 #' @return hor_adj single number used to shift model output time
 #' @export
 get_horizontal_adjustment <- function(df, PET_pos_threshold){
-  min_row <- df[df$actual_predicted_val < PET_pos_threshold ,] %>%
-    filter(actual_predicted_val == max(actual_predicted_val))
-  
-  max_row <- df[df$actual_predicted_val > PET_pos_threshold ,] %>%
-    filter(actual_predicted_val == min(actual_predicted_val))
-  
-  #Linear interpolation to figure out tau when mu is 0.79
-  hor_adj <- ((min_row$tau - max_row$tau) * (PET_pos_threshold - max_row$actual_predicted_val)) / 
-    (min_row$actual_predicted_val - PET_pos_threshold) + max_row$tau
+  if(min(df$actual_predicted_val) < PET_pos_threshold){
+    min_row <- df[df$actual_predicted_val < PET_pos_threshold, 
+    ] %>% filter(actual_predicted_val == max(actual_predicted_val, na.rm = TRUE))
+    max_row <- df[df$actual_predicted_val > PET_pos_threshold, 
+    ] %>% filter(actual_predicted_val == min(actual_predicted_val, na.rm = TRUE))
+    hor_adj <- ((min_row$tau - max_row$tau) * (PET_pos_threshold - 
+                                                 max_row$actual_predicted_val))/(min_row$actual_predicted_val - 
+                                                                                   PET_pos_threshold) + max_row$tau} else{
+                                                                                     hor_adj <- min(df$actual_predicted_val) - PET_pos_threshold
+                                                                                   }
   return(hor_adj)
   
 }
