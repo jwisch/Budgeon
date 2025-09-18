@@ -136,8 +136,8 @@ fit_polynomial <- function(x, y, degree = 3) {
 
 poly_ft <- function(eval_at_midpoint, id_name, degree = 3){
   eval_at_midpoint <- eval_at_midpoint[!is.na(eval_at_midpoint$Slope),]
-  x_vals = eval_at_midpoint$ eval_at_midpoint
-  y_vals = eval_at_midpoint $ Slope
+  x_vals = eval_at_midpoint$eval_at_midpoint
+  y_vals = eval_at_midpoint$Slope
   # cubic  
   polynomial_fit <- fit_polynomial(x_vals, y_vals, degree = 3)
   
