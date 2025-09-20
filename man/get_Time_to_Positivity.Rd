@@ -10,7 +10,16 @@ get_Time_to_Positivity(
   time_name,
   value_name,
   PET_pos_threshold,
-  degree = 3
+  degree = 3,
+  reliability_filter = c("none", "derived_value", "user_value"),
+  value_threshold = NULL,
+  arc_lower_comp_quantile = 0.99,
+  include_negative = TRUE,
+  engine = c("cutpointr", "grid"),
+  fallback_to_grid = TRUE,
+  grid_n = 200L,
+  seed = NULL,
+  verbose_filter = FALSE
 )
 }
 \arguments{

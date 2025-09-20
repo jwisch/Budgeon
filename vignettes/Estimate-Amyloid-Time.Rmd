@@ -1,0 +1,187 @@
+---
+title: "Estimating Time-to-Positivity"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Estimating Time-to-Positivity}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE, comment = "#>",
+  fig.width = 7, fig.height = 5,
+  message = FALSE, warning = FALSE
+)
+set.seed(123)
+```
+
+# Overview
+This demonstrates the full workflow provided by the package:
+
+1. The Classic Budgeon Model: 
+
+We replicate the methodology from Budgeon et al. (2017), which aggregates data from an entire cohort to build a single disease progression curve.
+
+2. Advanced Model with Reliability Filtering: 
+
+We showcase an enhanced workflow that first filters the cohort to include only "reliable accumulators." using annualized rate of change (ARC), then conduct time-to-positivity estimation following the classical model. 
+
+To properly demonstrate both workflows, our `generate_synth_data()` function can produce data for each scenario.
+
+```{r setup}
+library(Budgeon)
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+engine_to_use <- if (requireNamespace("cutpointr", quietly = TRUE)) "cutpointr" else "grid"
+```
+
+# Generate Synthetic Data
+## Scenario 1: Data for the Classical Budgeon Model (exact replicate)
+
+First, we generate data that mimics the simulation of Budgeon et al. (2017), where subjects have similar, low baseline biomarker levels (homogeneous baselines).
+```{r}
+df_classic <- generate_synth_data(n = 100, T = 50, l = 1, baseline_variability = "homogeneous")
+#define parameters
+id_name <- "ID"; time_name <- "Time"; value_name <- "Marker_level"
+PET_pos_threshold <- 0.32   
+degree <- 3
+```
+## Scenario 2: Data for the Complex Pipeline 
+To demonstrate the complex pipeline with prior filtering, we need a dataset with varied (heterogeneous) baselines. This is the default and recommended setting.
+
+```{r}
+df_varied <- generate_synth_data(
+  n = 100, T = 50, l = 1, 
+  baseline_variability = "heterogeneous"
+)
+```
+
+# The Classical Model (No Prioritize Filtering)
+Here, we apply the standard pipeline to the `df_classic` dataset, using all subjects to construct the cohort curve, as described in the original paper.
+
+```{r}
+t2p_none <- get_Time_to_Positivity(
+  df_classic, id_name, time_name, value_name, PET_pos_threshold,
+  degree = degree, reliability_filter = "none"
+)
+head(t2p_none)
+```
+
+# Complex Pipeline with Prioritize Filtering
+Now, we use the `df_varied` dataset to demonstrate the filtering workflow.
+
+## Derived Filter (ARC -> value that max F1)
+The pipeline automatically derives an optimal baseline biomarker cut-point to filter the cohort before building the model.
+```{r}
+t2p_derive <- get_Time_to_Positivity(
+  df = df_varied,
+  id_name, time_name, value_name, 
+  PET_pos_threshold, 
+  degree = degree,
+  reliability_filter = "derived_value",
+  engine = engine_to_use,
+  seed = 321,
+  verbose_filter = TRUE
+)
+
+# Show the results of the filtering
+str(list(
+  applied_mode    = t2p_derive$filter_info$applied_mode,
+  value_threshold = t2p_derive$filter_info$thresholds$value_threshold,
+  kept_ids        = t2p_derive$filter_info$n_kept,
+  total_ids       = t2p_derive$filter_info$n_total
+))
+
+```
+
+## User-defined Filter
+Alternatively, a user can supply their own pre-defined threshold. This bypass the process of using ARC and F1 to calculate the biomarker threshold for reliable accumulation subject data. 
+```{r}
+user_defined <- 0.22 # Set by User
+
+t2p_user <- get_Time_to_Positivity(
+  df_varied, id_name, time_name, value_name, PET_pos_threshold,
+  degree = degree,
+  reliability_filter = "user_value",
+  value_threshold = user_defined,
+  verbose_filter = TRUE
+)
+
+list(
+  user_defined = user_defined,
+  kept_ids = t2p_user$filter_info$n_kept,
+  total_ids = t2p_user$filter_info$n_total
+)
+```
+
+# Visual checks
+```{r}
+make_four_panel <- function(df_long, title_prefix = "Cohort") {
+  indiv <- get_individ_lm(df_long, value_name, time_name, id_name)
+  indiv <- indiv[indiv$Slope >= 0, , drop = FALSE]
+  eval  <- eval_lmm(df_long[df_long[[id_name]] %in% indiv[[id_name]], , drop = FALSE],
+                    id_name = id_name, time_name = time_name, individual_coeffs = indiv)
+  curve <- get_integration_estimates(eval, id_name = id_name, degree = degree)
+
+  p1 <- ggplot(df_long, aes(x = .data[[time_name]], y = .data[[value_name]], group = .data[[id_name]])) +
+    geom_point(alpha = 0.8) + geom_line(alpha = 0.4) + theme_bw() +
+    labs(x = "Time", y = "Marker Level", title = sprintf("%s: A. Longitudinal Data", title_prefix))
+
+  p2 <- ggplot(eval, aes(x = eval_at_midpoint, y = Slope)) +
+    geom_point() + theme_bw() + geom_smooth(method = "gam", se = FALSE, colour = "#782223") +
+    labs(x = "Estimated Mean by Participant", y = "Estimated Slope", title = "B. Mixed-Effects Summary")
+
+  p3 <- ggplot(curve, aes(x = mu_tau, y = tau)) +
+    geom_point() + theme_bw() + geom_smooth(method = "gam", se = FALSE, colour = "#782223") +
+    labs(x = "Marker Level", y = "Disease Progression Time", title = "C. Integrate reciprocal of B")
+
+  p4 <- ggplot(curve, aes(x = tau, y = mu_tau)) +
+    geom_point() + theme_bw() + geom_smooth(method = "gam", se = FALSE, colour = "#782223") +
+    labs(x = "Disease Progression Time", y = "Marker Level", title = "D. Inversion of C")
+
+  gridExtra::grid.arrange(p1, p2, p3, p4, nrow = 2, ncol = 2)
+  invisible(curve)
+}
+
+# 1. Visualize the classic model on the full, unfiltered classic dataset
+ make_four_panel(df_classic, "Classic Model (All IDs)")
+
+# 2. Visualize the results of the derived filter on the varied-baseline dataset
+make_four_panel(t2p_derive$filter_info$data, "Derived-Value Filtered")
+
+```
+
+# Cross-sectional Time to Positivity 
+
+Once a cohort model is built, it can estimate the T2P for a new individual with a single measurement. It is important that the queried biomarker values fall within the range of the data used to build the model; the function will return`NA` for extrapolated values.
+
+```{r}
+mu_subject <-  c(0.40, 0.55, 0.60)    
+mu_thresh  <- PET_pos_threshold
+
+# We use the model built from the derived-filter cohort for this example.
+t2a <- t2a_crosssectional(
+  df = t2p_derive$filter_info$data, 
+  id_name, time_name, value_name,
+  mu_subject, mu_threshold = mu_thresh, degree = degree,
+  reliability_filter = "none" # 'none' here because data is already filtered
+)
+data.frame(
+  Subject_Value = mu_subject,
+  Years_to_Positivity = t2a
+)
+```
+
+# Conclusion
+
+The `Budgeon` package provides a framework for modeling longitudinal biomarker data. This vignette has demonstrated how to:
+
+1. Replicate the classic Budgeon et al. (2017) model using the entire cohort.
+
+2. Apply an advanced reliability-accumulation filter using either a derived or user-defined threshold, which allows for more stable and reliable T2P calculation. 
+
+3. Visualize the intermediate steps of the model for diagnostic checks.
+
+4. Estimate time-to-positivity for new, cross-sectional subjects.

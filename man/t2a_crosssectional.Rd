@@ -2,7 +2,7 @@
 % Please edit documentation in R/t2a_crosssectional.R
 \name{t2a_crosssectional}
 \alias{t2a_crosssectional}
-\title{Cross-sectional time to amyloid positivity from raw cohort data}
+\title{Cross-sectional time to amyloid positivity (with optional reliable-accumulation filtering)}
 \usage{
 t2a_crosssectional(
   df,
@@ -11,32 +11,58 @@ t2a_crosssectional(
   value_name,
   mu_subject,
   mu_threshold,
-  degree = 3
+  degree = 3,
+  reliability_filter = c("none", "derived_value", "user_value"),
+  value_threshold = NULL,
+  arc_lower_comp_quantile = 0.99,
+  include_negative = TRUE,
+  engine = c("cutpointr", "grid"),
+  fallback_to_grid = TRUE,
+  grid_n = 200L,
+  seed = NULL,
+  verbose_filter = FALSE
 )
 }
 \arguments{
-\item{df}{A data.frame with longitudinal cohort data.}
+\item{df}{data.frame with longitudinal cohort data.}
 
-\item{id_name, time_name, value_name}{Column names (strings) for subject ID, time, and amyloid measure.}
+\item{id_name, time_name, value_name}{column names for subject ID, time, and amyloid measure.}
 
-\item{mu_subject}{Numeric scalar or vector: subject cross-sectional value (same scale as value_name).}
+\item{mu_subject}{numeric scalar or vector: subject cross-sectional value(s) (same scale as value_name).}
 
-\item{mu_threshold}{Numeric scalar: positivity cutoff (same scale as value_name).}
+\item{mu_threshold}{numeric scalar: positivity cutoff (same scale as value_name).}
 
-\item{degree}{Integer polynomial degree for slope-vs-level fit (default 3).}
+\item{degree}{integer polynomial degree for slope-vs-level fit (default 3).}
+
+\item{reliability_filter}{one of c("none","derived_value","user_value"). Default "none".}
+
+\item{value_threshold}{numeric or NULL. Required when reliability_filter = "user_value".}
+
+\item{arc_lower_comp_quantile}{numeric (0,1), quantile for ARC lower component (default 0.99).}
+
+\item{include_negative}{logical; keep negative slopes for ARC fit (default TRUE).}
+
+\item{engine}{one of c("cutpointr","grid") for learning the baseline value cut (default "cutpointr").}
+
+\item{fallback_to_grid}{logical; if TRUE and cutpointr missing, use the internal grid (default TRUE).}
+
+\item{grid_n}{integer; grid size if grid engine (default 200).}
+
+\item{seed}{integer or NULL; seed for GMM EM initialization in ARC estimation.}
+
+\item{verbose_filter}{logical; print messages from the filtering stage (default FALSE).}
 }
 \value{
 Numeric vector of time-to-positivity (years)
 }
 \description{
-This is a one-shot wrapper that builds the cohort t(mu) curve using the
-existing Budgeon pipeline and then computes time-to-positivity for one or
-more cross-sectional values.
-}
-\examples{
-\dontrun{
-  df <- generate_synth_data(150, 25, 1)
-  t2a_crosssectional(df, "ID", "Time", "Marker_level",
-                     mu_subject = 0.95, mu_threshold = 1.10)
+Builds the cohort t(mu) curve using the Budgeon pipeline and then computes
+time-to-positivity for one or more cross-sectional values (mu_subject).
+Optionally filters the cohort to "reliable accumulators" before building t(mu)
+using the same three modes as the main wrapper:
+\itemize{
+\item reliability_filter = "none"          : no filtering (original behavior)
+\item reliability_filter = "derived_value" : ARC -> labels -> max-F1 baseline cut -> filter
+\item reliability_filter = "user_value"    : filter by a user-supplied baseline cut
 }
 }

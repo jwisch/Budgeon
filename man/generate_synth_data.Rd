@@ -4,18 +4,35 @@
 \alias{generate_synth_data}
 \title{Generates synthetic data}
 \usage{
-generate_synth_data(n, T, l)
+generate_synth_data(
+  n,
+  T,
+  l,
+  baseline_variability = c("heterogeneous", "homogeneous")
+)
 }
 \arguments{
-\item{n}{Number of individuals}
+\item{n}{Number of individuals.}
 
-\item{T}{total length}
+\item{T}{Total length of the disease progression timeline.}
 
-\item{l}{length of time between observations}
+\item{l}{Length of time between observations.}
+
+\item{baseline_variability}{A character string specifying the baseline scenario.
+\itemize{
+\item \code{"heterogeneous"} (default): Creates a realistic cohort with varied baseline
+biomarker levels. This is the recommended setting for testing the full
+pipeline, including reliability filtering.
+\item \code{"homogeneous"}: Creates a dataset that replicates the simulation from
+Budgeon et al. (2017), where all subjects have similar, low baselines.
+Useful for demonstrating the classic model without filtering.
+}}
 }
 \value{
-all_data synthetic dataset with n participants with unique ID's, observations at an interval of Time l, and Marker_level values based on distribution parameters
+A synthetic dataset.
 }
 \description{
-Generates synthetic data
+This function creates synthetic datasets to test and demonstrate the Budgeon
+pipeline. It can generate data under two scenarios controlled by the
+\code{baseline_variability} parameter.
 }
